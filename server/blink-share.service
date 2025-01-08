@@ -1,0 +1,12 @@
+[Unit]
+Description=Node.js webserver displaying blink clips
+
+[Service]
+ExecStart=/usr/bin/node /home/jenga/server/src/app.js
+WorkingDirectory=/home/jenga/server
+StandardOutput=journal
+StandardError=journal
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+[Unit]
+Description=Blink USB that will send data to an FTP server
+After=network.target
+
+[Service]
+ExecStart=/bin/bash /home/jenga/client/client.sh
+WorkingDirectory=/home/jenga/client
+StandardOutput=journal
+StandardError=journal
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

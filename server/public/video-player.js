@@ -10,6 +10,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 Your browser does not support the video tag.
             </video>
         `;
+
+        const downloadBtn = document.getElementById("download-btn");
+        downloadBtn.addEventListener("click", () => {
+            const link = document.createElement("a");
+            link.href = `/video/${video}`;
+            link.download = video;
+            link.click();
+        });
     } else {
         document.getElementById("video-player-container").innerHTML = "<h2>No video found</h2>";
     }

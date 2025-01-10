@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
 :root {
     --page-color: hsl(0, 0%, 100%);
     --primary-green: hsl(167, 55%, 23%);
@@ -6,12 +8,11 @@
 
     --border-radius: 15px;
     --btn-padding: 10px 25px;
-
     --shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 body {
-    font-family: system-ui, sans-serif;
+    font-family: 'Poppins', sans-serif;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -71,6 +72,7 @@ h1 {
 
 .video-grid {
     display: grid;
+    height: 100%;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 30px;
     padding: 20px;

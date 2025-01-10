@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BlinkShare</title>
     <link rel="stylesheet" href="./styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,21 +13,23 @@
 </head>
 
 <body>
+
     <h1>BlinkShare</h1>
 
-        <div id="blink-stats"></div>
+    <div id="blink-stats"></div>
 
     <div class="sub-title">
         <h2>Videos</h2>
     </div>
 
-        <div id="button-bar">
-            <button id="all-videos-btn" class="video-btns">All Videos</button>
-            <button id="today-videos-btn" class="video-btns">Today's Videos</button>
-        </div>
+    <div id="button-bar">
+        <button id="all-videos-btn" class="video-btns">All Videos</button>
+        <button id="today-videos-btn" class="video-btns">Today's Videos</button>
+    </div>
 
     <div id="video-container" class="video-grid"></div>
     <canvas id="clips-per-hour-chart" width="400" height="400"></canvas>
+
 </body>
 
 </html>

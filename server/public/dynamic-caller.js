@@ -23,7 +23,7 @@ function fetchVideos(day = '') {
                     videoElement.classList.add("video-wrapper");
                     videoElement.innerHTML = `
                         <h2 class="video-title>${video.file.replace('.mp4', '')}</h2>
-                        <a href="./video-player.html?video=${video.file}">
+                        <a href="./video-player.html?video=${video.file}" target="_blank">
                             <video id="video-${video.file}" width="320" height="240">
                                 <source src="/video/${video.file}" type="video/mp4">
                                 Your browser does not support the video tag.
@@ -59,7 +59,7 @@ function fetchVideos(day = '') {
             console.error("Error fetching videos: ", err);
         });
 }
-
+/*
 function fetchClipsPerHour() {
     fetch('/api/clips-per-hour')
         .then(response => response.json())
@@ -93,3 +93,4 @@ function fetchClipsPerHour() {
             console.error("Error fetching clips per hour: ", err);
         });
 }
+*/

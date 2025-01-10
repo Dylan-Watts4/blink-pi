@@ -1,14 +1,13 @@
-
 :root {
     --page-color: hsl(0, 0%, 100%);
     --primary-green: hsl(167, 55%, 23%);
     --secondary-green: hsl(157, 59%, 52%);
     --accent-green: hsl(157, 55%, 71%);
 
-    --border-radius : 15px;
+    --border-radius: 15px;
     --btn-padding: 10px 25px;
 
-    --shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+    --shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 body {
@@ -54,7 +53,7 @@ h1 {
 }
 
 .video-btns {
-    border: none;
+    border: 2px solid var(--primary-green);
     font-size: 24px;
     font-weight: bold;
     border-radius: var(--border-radius);
@@ -86,8 +85,16 @@ h1 {
     box-shadow: var(--shadow);
 }
 
+.video-grid a {
+    width: 100%;
+}
+
 .video-wrapper {
     background-color: var(--page-color);
+}
+
+.video-title {
+    font-size: 18px;
 }
 
 video {
@@ -96,13 +103,41 @@ video {
     border-radius: var(--border-radius);
 }
 
-.video-title {
-    font-size: 18px;
-    text-wrap: wrap;
-}
-
 #clips-per-hour-chart {
     max-width: 400px;
     max-height: 200px;
     margin: 0 auto;
+}
+
+@media screen and (max-width: 480px) {
+
+    h1 {
+        font-size: 30px;
+    }
+
+    .video-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 20px;
+        margin-top: 15px;
+    }
+
+    #blink-stats {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    .sub-title h2 {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        font-size: 24px;
+    }
+
+    .video-btns {
+        font-size: 14px;
+        margin: 5px 20px;
+    }
 }

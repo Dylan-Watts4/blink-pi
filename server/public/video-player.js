@@ -4,8 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (video) {
         const videoPlayerContainer = document.getElementById("video-player-container");
         videoPlayerContainer.innerHTML = `
-            <h2>${video}</h2>
-            <video width="640" height="480" controls>
+            <h2>${video.replace('.mp4', '')}</h2>
+            <video width="640" height="480" controls autoplay>
                 <source src="/video/${video}" type="video/mp4">
                 Your browser does not support the video tag.
             </video>

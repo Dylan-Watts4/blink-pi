@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     fetchVideos();
-    fetchClipsPerHour();
+    //fetchClipsPerHour();
     document.getElementById("all-videos-btn").addEventListener("click", () => {
         fetchVideos();
     });
@@ -20,8 +20,9 @@ function fetchVideos(day = '') {
             if (videos.length > 0) {
                 videos.forEach(video => {
                     const videoElement = document.createElement("div");
+                    videoElement.classList.add("video-wrapper");
                     videoElement.innerHTML = `
-                        <h2>${video.file}</h2>
+                        <h2 class="video-title>${video.file.replace('.mp4', '')}</h2>
                         <a href="./video-player.html?video=${video.file}">
                             <video id="video-${video.file}" width="320" height="240">
                                 <source src="/video/${video.file}" type="video/mp4">
@@ -29,7 +30,6 @@ function fetchVideos(day = '') {
                             </video>
                             <canvas id="canvas-${video.file}" width="320" height="240" style="display:none;"></canvas>
                         </a>
-                        <p><a href="/video-player.html?video=${video.file}">Watch</a></p>
                     `;
                     videoContainer.appendChild(videoElement);
 

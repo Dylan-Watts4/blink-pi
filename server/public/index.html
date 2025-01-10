@@ -12,13 +12,17 @@
 
 <body>
     <h1>BlinkShare</h1>
-    <div id="blink-stats"></div>
-    <h2>Videos</h2>
 
-    <div id="button-bar">
-        <button id="all-videos-btn">All Videos</button>
-        <button id="today-videos-btn">Today's Videos</button>
+        <div id="blink-stats"></div>
+
+    <div class="sub-title">
+        <h2>Videos</h2>
     </div>
+
+        <div id="button-bar">
+            <button id="all-videos-btn" class="video-btns">All Videos</button>
+            <button id="today-videos-btn" class="video-btns">Today's Videos</button>
+        </div>
 
     <div id="video-container" class="video-grid"></div>
     <canvas id="clips-per-hour-chart" width="400" height="400"></canvas>

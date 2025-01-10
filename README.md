@@ -7,7 +7,8 @@ from the blink hub. It will then use FTP to transfer the files to a local server
 <h2>Prerequisites</h2>
 
 * RaspberryPi zero 2w
-* Local server or device with high uptime with FTP capabilities
-* Sufficient storage on said device
+* Local server or device with high uptime and FTP capabilities
+* At-least ~400 MB of storage on RaspberryPi zero 2W due to blink module requiring 300 MB for a write
+* Sufficient storage on server for storing clips
 <br>
 <h2>How To Set-Up</h2>

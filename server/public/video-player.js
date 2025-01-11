@@ -18,6 +18,48 @@ document.addEventListener("DOMContentLoaded", () => {
             link.download = video;
             link.click();
         });
+
+        const flagBtn = document.getElementById("flag-btn");
+        flagBtn.addEventListener("click", () => {
+            fetch('/api/flag', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ video })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Flagged video: ", data);
+            })
+            .catch(err => {
+                console.error("Error flagging video: ", err);
+            });
+        });
+
+        const closeBtn = document.getElementById("close-btn");
+        closeBtn.addEventListener("click", () => {
+            window.close();
+        });
+
+        const deleteBtn = document.getElementById("delete-btn");
+        deleteBtn.addEventListener("click", () => {
+            fetch('/api/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ video })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Deleted video: ", data);
+                window.close();
+            })
+            .catch(err => {
+                console.error("Error deleting video: ", err);
+            });
+        });
     } else {
         document.getElementById("video-player-container").innerHTML = "<h2>No video found</h2>";
     }

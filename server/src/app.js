@@ -7,8 +7,10 @@ const app = express();
 const port = 3000;
 
 const videoDir = path.join(__dirname, '../../../../../ftp');
+const flaggedDir = path.join(__dirname, '../../../../../flagged');
 
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.json());
 
 app.get('/api/videos', (req, res) => {
     const day = req.query.day ? new Date(req.query.day) : null;
@@ -42,6 +44,35 @@ app.get('/video/:video', (req, res) => {
     const videoPath = path.join(videoDir, req.params.video);
     res.sendFile(videoPath);
 })
+
+app.post('/api/flag', (req, res) => {
+    console.log('Flagging video: ', req.body);
+    const { video } = req.body;
+    const sourcePath = path.join(videoDir, video);
+    const destPath = path.join(flaggedDir, video);
+
+    fs.copyFile(sourcePath, destPath, (err) => {
+        if (err) {
+            console.error('Error flagging video: ', err);
+            return res.status(500).json('Error flagging video: ' + err);
+        }
+        res.json({ message: 'Video flagged' });
+    })
+});
+
+app.post('/api/delete', (req, res) => {
+    console.log('Deleting video: ', req.body);
+    const { video } = req.body;
+    const videoPath = path.join(videoDir, video);
+
+    fs.unlink(videoPath, (err) => {
+        if (err) {
+            console.error('Error deleting video: ', err);
+            return res.status(500).json('Error deleting video: ' + err);
+        }
+        res.json({ message: 'Video deleted' });
+    });
+});
 
 app.get('/api/stats', async (req, res) => {
     const host = "blink-pi.local";

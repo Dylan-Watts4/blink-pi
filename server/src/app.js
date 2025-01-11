@@ -2,9 +2,11 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const ping = require('ping');
+const https = require('https');
 
 const app = express();
 const port = 3000;
+const httpsPort = 443;
 
 const videoDir = path.join(__dirname, '../../../../../ftp');
 const flaggedDir = path.join(__dirname, '../../../../../flagged');
@@ -121,6 +123,15 @@ app.get('/api/clips-per-hour', (req, res) => {
         });
         res.json(clipsPerHour);
     });
+});
+
+const httpsOptions = {
+    key: fs.readFileSync('./certs/server.key'),
+    cert: fs.readFileSync('./certs/server.cert')
+}
+
+https.createServer(httpsOptions, app).listen(httpsPort, '0.0.0.0', () => {
+    console.log(`Server is running on https://0.0.0.0:${httpsPort}`);
 });
 
 app.listen(port, '0.0.0.0', () => {

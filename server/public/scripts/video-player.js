@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const video = urlParams.get("video");
     if (video) {
@@ -20,6 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const flagBtn = document.getElementById("flag-btn");
+        const isVideoFlagged = await isFlagged(video);
+        flagBtn.textContent = isVideoFlagged ? "Unflag" : "Flag";
         flagBtn.addEventListener("click", () => {
             fetch('/api/flag', {
                 method: 'POST',
@@ -29,8 +31,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify({ video })
             })
             .then(response => response.json())
-            .then(data => {
+            .then(async data => {
                 console.log("Flagged video: ", data);
+                const isVideoFlagged = await isFlagged(video);
+                flagBtn.textContent = isVideoFlagged ? "Unflag" : "Flag";
             })
             .catch(err => {
                 console.error("Error flagging video: ", err);
@@ -64,3 +68,14 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("video-player-container").innerHTML = "<h2>No video found</h2>";
     }
 });
+
+async function isFlagged(video) {
+    try {
+        const response = await fetch(`/api/flagged-video/${video}`);
+        const data = await response.json();
+        return data.flagged;
+    } catch (err) {
+        console.error("Error checking flagged video: ", err);
+        return false;
+    }
+}

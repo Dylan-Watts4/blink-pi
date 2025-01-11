@@ -57,19 +57,43 @@ app.get('/api/flagged', (req, res) => {
     });
 });
 
+app.get('/api/flagged-video/:video', (req, res) => {
+    const video = req.params.video;
+    const videoPath = path.join(flaggedDir, video);
+
+    fs.access(videoPath, fs.constants.F_OK, (err) => {
+        if (err) {
+            return res.json({ flagged: false });
+        }
+        return res.json({ flagged: true });
+    });
+});
+
 app.post('/api/flag', (req, res) => {
     console.log('Flagging video: ', req.body);
     const { video } = req.body;
     const sourcePath = path.join(videoDir, video);
     const destPath = path.join(flaggedDir, video);
 
-    fs.copyFile(sourcePath, destPath, (err) => {
-        if (err) {
-            console.error('Error flagging video: ', err);
-            return res.status(500).json('Error flagging video: ' + err);
+    fs.access(destPath, fs.constants.F_OK, (err) => {
+        if (!err) {
+            fs.unlink(destPath, (err) => {
+                if (err) {
+                    console.error('Error unflagging video: ', err);
+                    return res.status(500).json('Error unflagging video: ' + err);
+                }
+                res.json({ message: 'Video unflagged' });
+            });
+        } else {
+            fs.copyFile(sourcePath, destPath, (err) => {
+                if (err) {
+                    console.error('Error flagging video: ', err);
+                    return res.status(500).json('Error flagging video: ' + err);
+                }
+                res.json({ message: 'Video flagged' });
+            });
         }
-        res.json({ message: 'Video flagged' });
-    })
+    });
 });
 
 app.post('/api/delete', (req, res) => {

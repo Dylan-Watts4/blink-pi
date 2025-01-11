@@ -58,7 +58,7 @@ function fetchFlaggedVideos() {
             videoContainer.innerHTML = "";
             if (flaggedVideos.length > 0) {
                 flaggedVideos.forEach(videoFile => {
-                    const videoElement = createVideoElement(videoFile.file);
+                    const videoElement = createVideoElement(videoFile);
                     videoContainer.appendChild(videoElement);
                 });
             } else {

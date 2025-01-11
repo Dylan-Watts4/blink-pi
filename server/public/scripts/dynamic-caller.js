@@ -43,7 +43,7 @@ function fetchVideos(day = '') {
                     videoContainer.appendChild(videoElement);
                 });
             } else {
-                videoContainer.innerHTML = "<h2>No videos found</h2>";
+                videoContainer.innerHTML = "<h2 class='no-video'>No videos found</h2>";
             }
         }).catch(err => {
             console.error("Error fetching videos: ", err);
@@ -62,7 +62,7 @@ function fetchFlaggedVideos() {
                     videoContainer.appendChild(videoElement);
                 });
             } else {
-                videoContainer.innerHTML = "<h2>No flagged videos found</h2>";
+                videoContainer.innerHTML = "<h2 class='no-video'>No flagged videos found</h2>";
             }
         }).catch(err => {
             console.error("Error fetching flagged videos: ", err);

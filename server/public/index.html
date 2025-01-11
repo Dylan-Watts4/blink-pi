@@ -10,11 +10,16 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="./scripts/dynamic-caller.js"></script>
     <script src="./scripts/blink-stats.js"></script>
+    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
 </head>
 
 <body>
 
-    <h1>BlinkShare</h1>
+    <div class="header">
+        <i class='bx bxs-camera-home'></i>
+        <h1>BlinkShare</h1>
+    </div>
+    
 
     <div id="blink-stats"></div>
 
@@ -25,6 +30,7 @@
     <div id="button-bar">
         <button id="all-videos-btn" class="video-btns">All Videos</button>
         <button id="today-videos-btn" class="video-btns">Today's Videos</button>
+        <button id="flagged-videos-btn" class="video-btns">Flagged Videos</button>
     </div>
 
     <div id="video-container" class="video-grid"></div>

@@ -19,6 +19,18 @@ body {
     background-color: var(--page-color);
 }
 
+.header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.header i {
+    font-size: 50px;
+    color: var(--primary-green);
+    align-self: center;
+    margin-left: 50px;
+}
+
 h1 {
     text-align: center;
     color: var(--primary-green);
@@ -93,5 +105,18 @@ h1 {
     #video-player-container video {
         width: 320px;
         height: auto;
+    }
+
+    .btn-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        justify-items: center;
+        margin-top: 20px;
+    }
+
+    .video-btns {
+        width: 130px;
+        font-size: 16px;
+        margin: 15px 5px;
     }
 }

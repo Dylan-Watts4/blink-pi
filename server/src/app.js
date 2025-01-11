@@ -47,6 +47,16 @@ app.get('/video/:video', (req, res) => {
     res.sendFile(videoPath);
 })
 
+app.get('/api/flagged', (req, res) => {
+    fs.readdir(flaggedDir, (err, files) => {
+        if (err) {
+            return res.status(500).send('Unable to scan directory: ' + err);
+        }
+        const flaggedVideos = files.filter(file => file.endsWith('.mp4'));
+        res.json(flaggedVideos);
+    });
+});
+
 app.post('/api/flag', (req, res) => {
     console.log('Flagging video: ', req.body);
     const { video } = req.body;
@@ -126,8 +136,8 @@ app.get('/api/clips-per-hour', (req, res) => {
 });
 
 const httpsOptions = {
-    key: fs.readFileSync('./certs/server.key'),
-    cert: fs.readFileSync('./certs/server.cert')
+    key: fs.readFileSync('/home/jenga/server/src/certs/server.key'),
+    cert: fs.readFileSync('/home/jenga/server/src/certs/server.cert')
 }
 
 https.createServer(httpsOptions, app).listen(httpsPort, '0.0.0.0', () => {

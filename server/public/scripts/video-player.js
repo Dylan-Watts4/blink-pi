@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const closeBtn = document.getElementById("close-btn");
         closeBtn.addEventListener("click", () => {
-            window.close();
+            window.location.href = "/";
         });
 
         const deleteBtn = document.getElementById("delete-btn");

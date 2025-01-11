@@ -8,7 +8,27 @@ document.addEventListener("DOMContentLoaded", () => {
         const today = new Date().toISOString().split('T')[0];
         fetchVideos(today);
     });
+    document.getElementById("flagged-videos-btn").addEventListener("click", () => {
+        fetchFlaggedVideos();
+    });
 });
+
+function createVideoElement(video) {
+    const videoElement = document.createElement("div");
+    videoElement.classList.add("video-wrapper");
+    videoElement.innerHTML = `
+        <h2 class="video-title">${video.replace('.mp4', '')}</h2>
+        <a href="./video-player.html?video=${video}">
+            <video id="video-${video}" width="320" height="240">
+                <source src="/video/${video}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <canvas id="canvas-${video}" width="320" height="240" style="display:none;"></canvas>
+        </a>
+    `;
+
+    return videoElement;
+}
 
 function fetchVideos(day = '') {
     const url = day ? `/api/videos?day=${day}` : '/api/videos';
@@ -19,38 +39,8 @@ function fetchVideos(day = '') {
             videoContainer.innerHTML = "";
             if (videos.length > 0) {
                 videos.forEach(video => {
-                    const videoElement = document.createElement("div");
-                    videoElement.classList.add("video-wrapper");
-                    videoElement.innerHTML = `
-                        <h2 class="video-title>${video.file.replace('.mp4', '')}</h2>
-                        <a href="./video-player.html?video=${video.file}" target="_blank">
-                            <video id="video-${video.file}" width="320" height="240">
-                                <source src="/video/${video.file}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                            <canvas id="canvas-${video.file}" width="320" height="240" style="display:none;"></canvas>
-                        </a>
-                    `;
+                    const videoElement = createVideoElement(video.file);
                     videoContainer.appendChild(videoElement);
-
-                    const videoTag = document.getElementById(`video-${video.file}`);
-                    const canvas = document.getElementById(`canvas-${video.file}`);
-                    const context = canvas.getContext('2d');
-
-                    videoTag.addEventListener('loadeddata', () => {
-                        videoTag.currentTime = 1; // Capture thumbnail at 1 second
-                    });
-
-                    videoTag.addEventListener('seeked', () => {
-                        context.drawImage(videoTag, 0, 0, canvas.width, canvas.height);
-                        const thumbnailDataUrl = canvas.toDataURL('image/png');
-                        const img = document.createElement('img');
-                        img.src = thumbnailDataUrl;
-                        img.width = 320;
-                        img.height = 240;
-                        videoElement.insertBefore(img, videoTag);
-                        videoTag.style.display = 'none';
-                    });
                 });
             } else {
                 videoContainer.innerHTML = "<h2>No videos found</h2>";
@@ -59,6 +49,26 @@ function fetchVideos(day = '') {
             console.error("Error fetching videos: ", err);
         });
 }
+
+function fetchFlaggedVideos() {
+    fetch("/api/flagged")
+        .then(response => response.json())
+        .then(flaggedVideos => {
+            const videoContainer = document.getElementById("video-container");
+            videoContainer.innerHTML = "";
+            if (flaggedVideos.length > 0) {
+                flaggedVideos.forEach(videoFile => {
+                    const videoElement = createVideoElement(videoFile.file);
+                    videoContainer.appendChild(videoElement);
+                });
+            } else {
+                videoContainer.innerHTML = "<h2>No flagged videos found</h2>";
+            }
+        }).catch(err => {
+            console.error("Error fetching flagged videos: ", err);
+        });
+}
+
 /*
 function fetchClipsPerHour() {
     fetch('/api/clips-per-hour')

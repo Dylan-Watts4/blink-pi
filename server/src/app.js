@@ -3,6 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const ping = require('ping');
 const https = require('https');
+// TEST -----------------------------
+const session = require('express-session');
+const flash = require('connect-flash');
+const passport = require('./auth');
+// TEST -----------------------------
 
 const app = express();
 const port = 3000;
@@ -11,10 +16,48 @@ const httpsPort = 443;
 const videoDir = path.join(__dirname, '../../../../../ftp');
 const flaggedDir = path.join(__dirname, '../../../../../flagged');
 
-app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json());
+// TEST -----------------------------
+app.use(express.urlencoded({ extended: false }));
+app.use(session({
+    secret: 'secret_key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 7 days
+}));
+app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
 
-app.get('/api/videos', (req, res) => {
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect('/login');
+}
+
+app.post('/login', passport.authenticate('local', {
+    successRedirect: '/',
+    failureRedirect: '/login',
+    failureFlash: true
+}));
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+app.get('/logout', (req, res) => {
+    req.logout();
+    res.redirect('/login');
+});
+
+app.get('/', ensureAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+app.use(ensureAuthenticated, express.static(path.join(__dirname, '../public')));
+// TEST -----------------------------
+app.get('/api/videos', ensureAuthenticated, (req, res) => {
     const day = req.query.day ? new Date(req.query.day) : null;
 
     fs.readdir(videoDir, (err, files) => {
@@ -42,12 +85,12 @@ app.get('/api/videos', (req, res) => {
     });
 });
 
-app.get('/video/:video', (req, res) => {
+app.get('/video/:video', ensureAuthenticated, (req, res) => {
     const videoPath = path.join(videoDir, req.params.video);
     res.sendFile(videoPath);
 })
 
-app.get('/api/flagged', (req, res) => {
+app.get('/api/flagged', ensureAuthenticated, (req, res) => {
     fs.readdir(flaggedDir, (err, files) => {
         if (err) {
             return res.status(500).send('Unable to scan directory: ' + err);
@@ -57,7 +100,7 @@ app.get('/api/flagged', (req, res) => {
     });
 });
 
-app.get('/api/flagged-video/:video', (req, res) => {
+app.get('/api/flagged-video/:video', ensureAuthenticated, (req, res) => {
     const video = req.params.video;
     const videoPath = path.join(flaggedDir, video);
 
@@ -69,7 +112,7 @@ app.get('/api/flagged-video/:video', (req, res) => {
     });
 });
 
-app.post('/api/flag', (req, res) => {
+app.post('/api/flag', ensureAuthenticated, (req, res) => {
     console.log('Flagging video: ', req.body);
     const { video } = req.body;
     const sourcePath = path.join(videoDir, video);
@@ -96,7 +139,7 @@ app.post('/api/flag', (req, res) => {
     });
 });
 
-app.post('/api/delete', (req, res) => {
+app.post('/api/delete', ensureAuthenticated, (req, res) => {
     console.log('Deleting video: ', req.body);
     const { video } = req.body;
     const videoPath = path.join(videoDir, video);
@@ -110,7 +153,7 @@ app.post('/api/delete', (req, res) => {
     });
 });
 
-app.get('/api/stats', async (req, res) => {
+app.get('/api/stats', ensureAuthenticated, async (req, res) => {
     const host = "blink-pi.local";
     try {
         const isAlive = await ping.promise.probe(host);
@@ -135,7 +178,7 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
-app.get('/api/clips-per-hour', (req, res) => {
+app.get('/api/clips-per-hour', ensureAuthenticated, (req, res) => {
     const now = new Date();
     const past24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 

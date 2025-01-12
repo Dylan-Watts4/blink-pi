@@ -89,6 +89,13 @@ h1 {
         margin-bottom: 10px;
     }
 
+    .header i {
+        font-size: 30px;
+        color: var(--primary-green);
+        align-self: center;
+        margin-left: 50px;
+    }
+
     #video-player-container {
         display: flex;
         flex-direction: column;

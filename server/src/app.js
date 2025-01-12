@@ -46,6 +46,10 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
+app.get('/styles/login.css', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/styles/login.css'));
+});
+
 app.get('/logout', (req, res) => {
     req.logout();
     res.redirect('/login');

@@ -11,6 +11,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("flagged-videos-btn").addEventListener("click", () => {
         fetchFlaggedVideos();
     });
+    document.getElementById("front-camera-btn").addEventListener("click", () => {
+        filterFetchVideos('Front');
+    });
+    document.getElementById("back-camera-btn").addEventListener("click", () => {
+        filterFetchVideos('back');
+    });
 });
 
 function createVideoElement(video) {
@@ -28,6 +34,32 @@ function createVideoElement(video) {
     `;
 
     return videoElement;
+}
+
+function filterFetchVideos(camera) {
+    fetch('/api/videos')
+        .then(response => response.json())
+        .then(videos => {
+            const videoContainer = document.getElementById("video-container");
+            videoContainer.innerHTML = "";
+            let count = 0;
+            if (videos.length > 0) {
+                videos.forEach(video => {
+                    if (video.file.includes(camera)) {
+                        count++;
+                        const videoElement = createVideoElement(video.file);
+                        videoContainer.appendChild(videoElement);
+                    }
+                });
+            } else {
+                videoContainer.innerHTML = "<h2 class='no-video'>No videos found</h2>";
+            }
+            if (count === 0) {
+                videoContainer.innerHTML = "<h2 class='no-video'>No videos found</h2>";
+            }
+        }).catch(err => {
+            console.error("Error fetching videos: ", err);
+        });
 }
 
 function fetchVideos(day = '') {

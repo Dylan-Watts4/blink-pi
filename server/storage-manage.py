@@ -1,8 +1,8 @@
 import os 
 
-DIRECTORY = "/ftp/"
+DIRECTORY = "/media/blink/ftp"
 # MB
-DEDICATED_SPACE = 150
+DEDICATED_SPACE = 300 * 1024 # 300 GB
 
 def get_files():
     return os.listdir(DIRECTORY)

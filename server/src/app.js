@@ -13,8 +13,9 @@ const app = express();
 const port = 3000;
 const httpsPort = 443;
 
-const videoDir = path.join(__dirname, '../../../../../ftp');
-const flaggedDir = path.join(__dirname, '../../../../../flagged');
+const videoDir = path.join(__dirname, '../../../../../media/blink/videos');
+const flaggedDir = path.join(__dirname, '../../../../../media/blink/flagged');
+const certsDir = path.join(__dirname, '/home/jenga/server/src/certs');
 
 app.use(express.json());
 // TEST -----------------------------
@@ -207,8 +208,8 @@ app.get('/api/clips-per-hour', ensureAuthenticated, (req, res) => {
 });
 
 const httpsOptions = {
-    key: fs.readFileSync('/home/jenga/server/src/certs/server.key'),
-    cert: fs.readFileSync('/home/jenga/server/src/certs/server.cert')
+    key: fs.readFileSync(path.join(certsDir, 'server.key')),
+    cert: fs.readFileSync(path.join(certsDir, 'server.crt'))
 }
 
 https.createServer(httpsOptions, app).listen(httpsPort, '0.0.0.0', () => {

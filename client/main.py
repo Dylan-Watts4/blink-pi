@@ -39,7 +39,7 @@ def clean():
     os.system("sudo sync")
     os.system("sudo modprobe -r g_mass_storage")
     os.system(f"sudo rm -rf {video_directory}/*")
-    time.sleep(5)
+    time.sleep(15)
     os.system("sudo modprobe g_mass_storage file=/usb-drive.img stall=0 ro=0 removable=1")
     os.system("sudo sync")
 

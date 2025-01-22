@@ -1,6 +1,6 @@
 import os 
 
-DIRECTORY = "/media/blink/ftp"
+DIRECTORY = "/media/blink/videos"
 # MB
 DEDICATED_SPACE = 300 * 1024 # 300 GB
 

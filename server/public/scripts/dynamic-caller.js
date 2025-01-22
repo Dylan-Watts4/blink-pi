@@ -2,22 +2,41 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchVideos();
     //fetchClipsPerHour();
     document.getElementById("all-videos-btn").addEventListener("click", () => {
+        resetFilters();
         fetchVideos();
     });
     document.getElementById("today-videos-btn").addEventListener("click", () => {
+        resetFilters();
         const today = new Date().toISOString().split('T')[0];
+        currentDay = today;
         fetchVideos(today);
     });
     document.getElementById("flagged-videos-btn").addEventListener("click", () => {
+        resetFilters();
         fetchFlaggedVideos();
     });
     document.getElementById("front-camera-btn").addEventListener("click", () => {
-        filterFetchVideos('Front');
+        resetFilters();
+        currentCamera = 'Front';
+        fetchVideos(currentDay, currentPage, videosPerPage, 'Front');
     });
     document.getElementById("back-camera-btn").addEventListener("click", () => {
-        filterFetchVideos('back');
+        resetFilters();
+        currentCamera = 'back';
+        fetchVideos(currentDay, currentPage, videosPerPage, 'back');
+    });
+    document.getElementById("prev-page-btn").addEventListener("click", () => {
+        changePage(-1);
+    });
+    document.getElementById("next-page-btn").addEventListener("click", () => {
+        changePage(1);
     });
 });
+
+let currentPage = 1;
+const videosPerPage = 10;
+let currentCamera = '';
+let currentDay = '';
 
 function createVideoElement(video) {
     const videoElement = document.createElement("div");
@@ -36,37 +55,12 @@ function createVideoElement(video) {
     return videoElement;
 }
 
-function filterFetchVideos(camera) {
-    fetch('/api/videos')
-        .then(response => response.json())
-        .then(videos => {
-            const videoContainer = document.getElementById("video-container");
-            videoContainer.innerHTML = "";
-            let count = 0;
-            if (videos.length > 0) {
-                videos.forEach(video => {
-                    if (video.file.includes(camera)) {
-                        count++;
-                        const videoElement = createVideoElement(video.file);
-                        videoContainer.appendChild(videoElement);
-                    }
-                });
-            } else {
-                videoContainer.innerHTML = "<h2 class='no-video'>No videos found</h2>";
-            }
-            if (count === 0) {
-                videoContainer.innerHTML = "<h2 class='no-video'>No videos found</h2>";
-            }
-        }).catch(err => {
-            console.error("Error fetching videos: ", err);
-        });
-}
-
-function fetchVideos(day = '') {
-    const url = day ? `/api/videos?day=${day}` : '/api/videos';
+function fetchVideos(day = '', page = 1, limit = videosPerPage, camera = '') {
+    const url = day ? `/api/videos?day=${day}&page=${page}&limit=${limit}&camera=${camera}` : `/api/videos?page=${page}&limit=${limit}&camera=${camera}`;
     fetch(url)
         .then(response => response.json())
-        .then(videos => {
+        .then(data => {
+            const videos = data.videos;
             const videoContainer = document.getElementById("video-container");
             videoContainer.innerHTML = "";
             if (videos.length > 0) {
@@ -77,6 +71,7 @@ function fetchVideos(day = '') {
             } else {
                 videoContainer.innerHTML = "<h2 class='no-video'>No videos found</h2>";
             }
+            updatePaginationControls(data.page, data.totalPages);
         }).catch(err => {
             console.error("Error fetching videos: ", err);
         });
@@ -99,6 +94,24 @@ function fetchFlaggedVideos() {
         }).catch(err => {
             console.error("Error fetching flagged videos: ", err);
         });
+}
+
+function updatePaginationControls(currentPage, totalPages) {
+    document.getElementById("current-page").textContent = `Page ${currentPage} of ${totalPages}`;
+    document.getElementById("prev-page-btn").disabled = currentPage === 1;
+    document.getElementById("next-page-btn").disabled = currentPage === totalPages;
+}
+
+function changePage(delta) {
+    currentPage += delta;
+    // TODO: defaults to all, need to add support for today and flagged
+    fetchVideos(currentDay, currentPage, videosPerPage, currentCamera);
+}
+
+function resetFilters() {
+    currentCamera = '';
+    currentDay = '';
+    currentPage = 1;
 }
 
 /*

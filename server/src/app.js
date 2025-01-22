@@ -3,11 +3,9 @@ const path = require('path');
 const fs = require('fs');
 const ping = require('ping');
 const https = require('https');
-// TEST -----------------------------
 const session = require('express-session');
 const flash = require('connect-flash');
 const passport = require('./auth');
-// TEST -----------------------------
 
 const app = express();
 const port = 3000;
@@ -17,8 +15,29 @@ const videoDir = path.join(__dirname, '../../../../../media/blink/videos');
 const flaggedDir = path.join(__dirname, '../../../../../media/blink/flagged');
 const certsDir = '/home/jenga/server/src/certs'
 
+const videosPerPage = 10;
+
+// TEST ------------------------------------
+const {transporter, email} = require('./email');
+
+function sendEmailNotification(video) {
+    const mailOptions = {
+        from: email,
+        to: 'query from db',
+        subject: 'Blink Video Alert',
+        text: `A new video has been uploaded: ${video}`
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.error(error);
+        }
+        console.log('Email sent: ' + info.response);
+    })
+}
+// TEST ------------------------------------
+
 app.use(express.json());
-// TEST -----------------------------
 app.use(express.urlencoded({ extended: false }));
 app.use(session({
     secret: 'secret_key',
@@ -61,15 +80,22 @@ app.get('/', ensureAuthenticated, (req, res) => {
 });
 
 app.use(ensureAuthenticated, express.static(path.join(__dirname, '../public')));
-// TEST -----------------------------
 app.get('/api/videos', ensureAuthenticated, (req, res) => {
     const day = req.query.day ? new Date(req.query.day) : null;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || videosPerPage;
+    const camera = req.query.camera || '';
 
     fs.readdir(videoDir, (err, files) => {
         if (err) {
             return res.status(500).send('Unable to scan directory: ' + err);
         }
-        const videos = files.filter(file => file.endsWith('.mp4'));
+        let videos = files.filter(file => file.endsWith('.mp4'));
+
+        if (camera) {
+            videos = videos.filter(file => file.includes(camera));
+        }
+
         let videosWithStats = videos.map(file => {
             const filePath = path.join(videoDir, file);
             const stats = fs.statSync(filePath);
@@ -86,7 +112,19 @@ app.get('/api/videos', ensureAuthenticated, (req, res) => {
         }
 
         videosWithStats.sort((a, b) => b.ctime - a.ctime);
-        res.json(videosWithStats);
+
+        // Page
+        const startIndex = (page - 1) * limit;
+        const endIndex = page * limit;
+        const paginatedVideos = videosWithStats.slice(startIndex, endIndex);
+
+        res.json({
+            page,
+            limit,
+            total: videosWithStats.length,
+            totalPages: Math.ceil(videosWithStats.length / limit),
+            videos: paginatedVideos
+        });
     });
 });
 

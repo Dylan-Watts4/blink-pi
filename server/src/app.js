@@ -6,6 +6,9 @@ const https = require('https');
 const session = require('express-session');
 const flash = require('connect-flash');
 const passport = require('./auth');
+const { addUser } = require('./database');
+const morgan = require('morgan');
+const winston = require('winston');
 
 const app = express();
 const port = 3000;
@@ -16,6 +19,29 @@ const flaggedDir = path.join(__dirname, '../../../../../media/blink/flagged');
 const certsDir = '/home/jenga/server/src/certs'
 
 const videosPerPage = 10;
+
+// Configure winston logger
+const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.timestamp(),
+        winston.format.printf(({ timestamp, level, message }) =>{
+            return `${timestamp} ${level}: ${message}`;
+        })
+    ),
+    transports: [
+        new winston.transports.File({ filename: '/home/jenga/server/logs/app.log' }),
+        new winston.transports.Console()
+    ]
+});
+
+// Configure morgan to use winston logger
+app.use(morgan('combined', {
+    stream: {
+        write: (message) => logger.info(message.trim())
+    }
+}));
 
 // TEST ------------------------------------
 const {transporter, email} = require('./email');
@@ -30,7 +56,8 @@ function sendEmailNotification(video) {
 
     transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
-            console.error(error);
+            logger.info(`Error sending email: ${error}`);
+            return;
         }
         console.log('Email sent: ' + info.response);
     })
@@ -56,14 +83,35 @@ function ensureAuthenticated(req, res, next) {
     res.redirect('/login');
 }
 
-app.post('/login', passport.authenticate('local', {
-    successRedirect: '/',
-    failureRedirect: '/login',
-    failureFlash: true
-}));
+app.post('/login', (req, res, next) => {
+    logger.info(`Login attempt: ${req.body.username} from ${req.ip}`);
+    passport.authenticate('local', (err, user, info) => {
+        if (err) {
+            logger.error(`Error authenticating user: ${err}`);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+        if (!user) {
+            logger.warn(`Failed login attempt: ${req.body.username} from ${req.ip}`);
+            return res.status(401).json({ message: 'Invalid username or password' });
+        }
+        req.login(user, (err) => {
+            if (err) {
+                logger.error(`Error logging in: ${err}`);
+                return res.status(500).json({ message: 'Internal server error' });
+            }
+            logger.info(`Login successful: ${req.body.username} from ${req.ip}`);
+            return res.json({ success: true, message: 'Login successful' });
+        });
+    })(req, res, next);
+});
 
 app.get('/login', (req, res) => {
+    logger.info(`Login page requested from ${req.ip}`);
     res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+app.get('/scripts/login.js', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/scripts/login.js'));
 });
 
 app.get('/styles/login.css', (req, res) => {
@@ -71,16 +119,19 @@ app.get('/styles/login.css', (req, res) => {
 });
 
 app.get('/logout', (req, res) => {
+    logger.info(`Logout requested from user ${req.user.username} at ${req.ip}`);
     req.logout();
     res.redirect('/login');
 });
 
 app.get('/', ensureAuthenticated, (req, res) => {
+    logger.info(`Home page requested from user ${req.user.username} at ${req.ip}`);
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 app.use(ensureAuthenticated, express.static(path.join(__dirname, '../public')));
 app.get('/api/videos', ensureAuthenticated, (req, res) => {
+    logger.info(`API videos requested from user ${req.user.username} at ${req.ip}`);
     const day = req.query.day ? new Date(req.query.day) : null;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || videosPerPage;
@@ -88,6 +139,7 @@ app.get('/api/videos', ensureAuthenticated, (req, res) => {
 
     fs.readdir(videoDir, (err, files) => {
         if (err) {
+            logger.error(`Error scanning directory: ${err}`);
             return res.status(500).send('Unable to scan directory: ' + err);
         }
         let videos = files.filter(file => file.endsWith('.mp4'));
@@ -136,6 +188,7 @@ app.get('/video/:video', ensureAuthenticated, (req, res) => {
 app.get('/api/flagged', ensureAuthenticated, (req, res) => {
     fs.readdir(flaggedDir, (err, files) => {
         if (err) {
+            logger.error(`Error scanning directory: ${err}`);
             return res.status(500).send('Unable to scan directory: ' + err);
         }
         const flaggedVideos = files.filter(file => file.endsWith('.mp4'));
@@ -156,7 +209,7 @@ app.get('/api/flagged-video/:video', ensureAuthenticated, (req, res) => {
 });
 
 app.post('/api/flag', ensureAuthenticated, (req, res) => {
-    console.log('Flagging video: ', req.body);
+    logger.info(`Flag video requested from user ${req.user.username} at ${req.ip}`);
     const { video } = req.body;
     const sourcePath = path.join(videoDir, video);
     const destPath = path.join(flaggedDir, video);
@@ -165,7 +218,7 @@ app.post('/api/flag', ensureAuthenticated, (req, res) => {
         if (!err) {
             fs.unlink(destPath, (err) => {
                 if (err) {
-                    console.error('Error unflagging video: ', err);
+                    logger.error(`Error unflagging video: ${err}`);
                     return res.status(500).json('Error unflagging video: ' + err);
                 }
                 res.json({ message: 'Video unflagged' });
@@ -173,7 +226,7 @@ app.post('/api/flag', ensureAuthenticated, (req, res) => {
         } else {
             fs.copyFile(sourcePath, destPath, (err) => {
                 if (err) {
-                    console.error('Error flagging video: ', err);
+                    logger.error(`Error flagging video: ${err}`);
                     return res.status(500).json('Error flagging video: ' + err);
                 }
                 res.json({ message: 'Video flagged' });
@@ -183,13 +236,13 @@ app.post('/api/flag', ensureAuthenticated, (req, res) => {
 });
 
 app.post('/api/delete', ensureAuthenticated, (req, res) => {
-    console.log('Deleting video: ', req.body);
+    logger.info(`Delete video requested from user ${req.user.username} at ${req.ip}`);
     const { video } = req.body;
     const videoPath = path.join(videoDir, video);
 
     fs.unlink(videoPath, (err) => {
         if (err) {
-            console.error('Error deleting video: ', err);
+            logger.error(`Error deleting video: ${err}`);
             return res.status(500).json('Error deleting video: ' + err);
         }
         res.json({ message: 'Video deleted' });
@@ -202,6 +255,7 @@ app.get('/api/stats', ensureAuthenticated, async (req, res) => {
         const isAlive = await ping.promise.probe(host);
         fs.readdir(videoDir, (err, files) => {
             if (err) {
+                logger.error(`Error scanning directory: ${err}`);
                 return res.status(500).send('Unable to scan directory: ' + err);
             }
             const videos = files.filter(file => file.endsWith('.mp4'));
@@ -217,6 +271,7 @@ app.get('/api/stats', ensureAuthenticated, async (req, res) => {
             });
         });
     } catch (error) {
+        logger.error(`Error collecting stats: ${error}`);
         res.status(500).send('Error collecting stats: ' + error);
     }
 });
@@ -227,6 +282,7 @@ app.get('/api/clips-per-hour', ensureAuthenticated, (req, res) => {
 
     fs.readdir(videoDir, (err, files) => {
         if (err) {
+            logger.error(`Error scanning directory: ${err}`);
             return res.status(500).send('Unable to scan directory: ' + err);
         }
         const videos = files.filter(file => file.endsWith('.mp4'));
@@ -244,6 +300,18 @@ app.get('/api/clips-per-hour', ensureAuthenticated, (req, res) => {
         res.json(clipsPerHour);
     });
 });
+
+app.post('/api/add-user', ensureAuthenticated, (req, res) => {
+    logger.warn(`New user added: ${req.body.username} from ${req.ip}`);
+    const { username, password } = req.body;
+    addUser(username, password, (error, result) => {
+        if (error) {
+            logger.error(`Error adding user: ${error}`);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        }
+        res.json(result);
+    })
+})
 
 const httpsOptions = {
     key: fs.readFileSync(path.join(certsDir, 'server.key')),

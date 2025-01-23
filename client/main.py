@@ -4,6 +4,7 @@ from config import SERVER, USER, PASS
 import os
 import time
 from ftplib import FTP
+from datetime import datetime
 
 directory = "/mnt/usb"
 video_directory = "/mnt/usb/blink"
@@ -11,9 +12,11 @@ video_directory = "/mnt/usb/blink"
 def upload_file(file_path):
     with FTP(SERVER) as ftp:
         ftp.login(user=USER, passwd=PASS)
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        new_filename = f"{current_date}_{os.path.basename(file_path)}"
         with open(file_path, "rb") as file:
-            ftp.storbinary(f"STOR {os.path.basename(file_path)}", file)
-        print(f"File {file_path} uploaded successfully")
+            ftp.storbinary(f"STOR {new_filename}", file)
+        print(f"File {file_path} uploaded successfully as {new_filename}")
 
 def check_directory():
     mp4_files = []

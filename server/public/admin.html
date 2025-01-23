@@ -3,13 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="scripts/admin.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <title>Admin | BlinkShare</title>
 </head>
 
 <body>
     <h1>Admin</h1>
     
-    
+    <div id="container">
+        <form id="add-user-form">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit">Add User</button>
+        </form>
+        <div id="response-message"></div>
+    </div>
 </body>
 
 </html>

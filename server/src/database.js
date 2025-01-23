@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const bcrypt = require('bcrypt');
 
 const dbPath = path.join(__dirname, 'users.db');
 const db = new sqlite3.Database(dbPath);
@@ -12,17 +13,26 @@ db.serialize(() => {
     )`);
 });
 
-const addUser = (username, password) => {
-    bcrypt.hash(password, 10, (err, hash) => {
-        if (err) throw err;
-        db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash], (err) => {
+const addUser = (username, password, callback) => {
+    db.get('SELECT username FROM users WHERE username = ?', [username], (error, row) => {
+        if (error) {
+            return callback(error);
+        }
+        if (row) {
+            return callback(null, { success: false, message: 'User already exists' });
+        }
+        bcrypt.hash(password, 12, (err, hash) => {
             if (err) {
-                console.error('Error adding user: ', err);
-            } else {
-                console.log('User added successfully');
+                return callback(err);
             }
+            db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash], (err) => {
+                if (err) {
+                    return callback(err);
+                }
+                callback(null, { success: true, message: 'User added successfully' });
+            })
         });
-    })
+    });
 };
 
 module.exports = {db, addUser};

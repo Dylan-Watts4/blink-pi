@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
         fileCount.textContent = `File Count: ${stats.fileCount}`;
 
         const totalSize = document.createElement("p");
-        totalSize.textContent = `Total Size: ${(stats.totalSize / (1024 * 1024)).toFixed(2)} MB`;
+        totalSize.textContent = `Total Size: ${(stats.totalSize / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 
         statsContainer.appendChild(onlineStatus);
         statsContainer.appendChild(fileCount);

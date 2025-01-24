@@ -39,6 +39,7 @@ let currentCamera = '';
 let currentDay = '';
 
 function clearTitle(title) {
+    if (!title) return '';
     title.replace('.mp4', '');
     title.replace('Front', '');
     title.replace('back', '');
@@ -54,13 +55,9 @@ function createVideoElement(video) {
     const videoElement = document.createElement("div");
     videoElement.classList.add("video-wrapper");
     videoElement.innerHTML = `
-        <h2 class="video-title">${clearTitle(video)}</h2>
-        <a href="./video-player.html?video=${video}">
-            <video id="video-${video}" width="320" height="240">
-                <source src="/video/${video}" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-            <canvas id="canvas-${video}" width="320" height="240" style="display:none;"></canvas>
+        <h2 class="video-title">${clearTitle(video.file)}</h2>
+        <a href="./video-player.html?video=${video.file}">
+            <img src="${video.thumbnailURL}" alt="Thumbnail for ${video.file}" width="320" height="240">
         </a>
     `;
 
@@ -77,7 +74,7 @@ function fetchVideos(day = '', page = 1, limit = videosPerPage, camera = '') {
             videoContainer.innerHTML = "";
             if (videos.length > 0) {
                 videos.forEach(video => {
-                    const videoElement = createVideoElement(video.file);
+                    const videoElement = createVideoElement(video);
                     videoContainer.appendChild(videoElement);
                 });
             } else {

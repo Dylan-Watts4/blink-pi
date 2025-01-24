@@ -9,13 +9,18 @@ const passport = require('./auth');
 const { addUser } = require('./database');
 const morgan = require('morgan');
 const winston = require('winston');
+const ffmpeg = require('fluent-ffmpeg');
 
 const app = express();
 const port = 3000;
 const httpsPort = 443;
 
+ffmpeg.setFfmpegPath('/usr/bin/ffmpeg');
+ffmpeg.setFfprobePath('/usr/bin/ffprobe');
+
 const videoDir = path.join(__dirname, '../../../../../media/blink/videos');
 const flaggedDir = path.join(__dirname, '../../../../../media/blink/flagged');
+const thumbnailDir = path.join(__dirname, '../../../../../media/blink/thumbnail');
 const certsDir = '/home/jenga/server/src/certs'
 
 const videosPerPage = 10;
@@ -155,7 +160,8 @@ app.get('/api/videos', ensureAuthenticated, (req, res) => {
         let videosWithStats = videos.map(file => {
             const filePath = path.join(videoDir, file);
             const stats = fs.statSync(filePath);
-            return { file, ctime: stats.ctime };
+            const thumbnailURL = `/thumbnail/${file.replace('.mp4','')}-thumbnail.png`;
+            return { file, ctime: stats.ctime, thumbnailURL };
         });
 
         if (day) {
@@ -174,14 +180,61 @@ app.get('/api/videos', ensureAuthenticated, (req, res) => {
         const endIndex = page * limit;
         const paginatedVideos = videosWithStats.slice(startIndex, endIndex);
 
-        res.json({
-            page,
-            limit,
-            total: videosWithStats.length,
-            totalPages: Math.ceil(videosWithStats.length / limit),
-            videos: paginatedVideos
+        // Generate thumbnails if they don't exist
+        const generateThumbnailsPromises = paginatedVideos.map(video => {
+            return new Promise((resolve, reject) => {
+                const videoPath = path.join(videoDir, video.file);
+                generateThumbnail(video.file, thumbnailDir, (err) => {
+                    if (err) {
+                        logger.error(`Error generating thumbnail: ${err}`);
+                        return reject(err);
+                    }
+                    resolve();
+                })
+            });
+        });
+
+        Promise.all(generateThumbnailsPromises)
+        .then(() => {
+            res.json({
+                page,
+                limit,
+                total: videosWithStats.length,
+                totalPages: Math.ceil(videosWithStats.length / limit),
+                videos: paginatedVideos
+            });
+        })
+        .catch(err => {
+            res.status(500).send(`Error generating thumbnails: ${err}`)
         });
     });
+});
+
+function generateThumbnail(video, thumbnailPath, callback) {
+    const thumbnailFilePath = path.join(thumbnailPath, `${video.replace('.mp4','')}-thumbnail.png`);
+    fs.access(thumbnailFilePath, fs.constants.F_OK, (err) => {
+        if (!err) {
+            return callback(null);
+        }
+        ffmpeg(path.join(videoDir, video))
+            .screenshots({
+                count: 1,
+                folder: thumbnailPath,
+                filename: '%b-thumbnail.png',
+                size: '320x240'
+            })
+            .on('end', () => {
+                callback(null);
+            })
+            .on('error', (err) => {
+                callback(err);
+            });
+    });
+}
+
+app.get('/thumbnail/:video', ensureAuthenticated, (req, res) => {
+    const thumbnailPath = path.join(thumbnailDir, `${req.params.video}`);
+    res.sendFile(thumbnailPath);
 });
 
 app.get('/video/:video', ensureAuthenticated, (req, res) => {
@@ -195,7 +248,10 @@ app.get('/api/flagged', ensureAuthenticated, (req, res) => {
             logger.error(`Error scanning directory: ${err}`);
             return res.status(500).send('Unable to scan directory: ' + err);
         }
-        const flaggedVideos = files.filter(file => file.endsWith('.mp4'));
+        const flaggedVideos = files.filter(file => file.endsWith('.mp4')).map(file => {
+            const thumbnailURL = `/thumbnail/${file.replace('.mp4', '')}-thumbnail.png`;
+            return { file, thumbnailURL };
+        });
         res.json(flaggedVideos);
     });
 });

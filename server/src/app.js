@@ -92,10 +92,6 @@ app.get("/robots.txt", (req, res) => {
     res.sendFile(path.join(__dirname, '../public/robots.txt'));
 });
 
-app.get("/favicon.ico", (req, res) => {
-    res.sendFile(path.to.join(__dirname, '../public/favicon.ico'));
-});
-
 app.post('/login', (req, res, next) => {
     logger.info(`Login attempt: ${req.body.username} from ${req.ip}`);
     passport.authenticate('local', (err, user, info) => {

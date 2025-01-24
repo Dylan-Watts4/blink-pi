@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (video) {
         const videoPlayerContainer = document.getElementById("video-player-container");
         videoPlayerContainer.innerHTML = `
-            <h2>${video.replace('.mp4', '')}</h2>
+            <h2>${clearTitle(video)}</h2>
             <video width="640" height="480" controls autoplay>
                 <source src="/video/${video}" type="video/mp4">
                 Your browser does not support the video tag.
@@ -68,6 +68,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("video-player-container").innerHTML = "<h2>No video found</h2>";
     }
 });
+
+function clearTitle(title) {
+    title.replace('.mp4', '');
+    title.replace('Front', '');
+    title.replace('back', '');
+    let date = title.split('_')[0];
+    let time = title.split('_')[1];
+    date = date.replaceAll('-', '/');
+    time = time.replaceAll('-', ':');
+    title = date + ' ' + time;
+    return title;
+}
 
 async function isFlagged(video) {
     try {

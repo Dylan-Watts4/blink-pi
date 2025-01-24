@@ -38,11 +38,23 @@ const videosPerPage = 10;
 let currentCamera = '';
 let currentDay = '';
 
+function clearTitle(title) {
+    title.replace('.mp4', '');
+    title.replace('Front', '');
+    title.replace('back', '');
+    let date = title.split('_')[0];
+    let time = title.split('_')[1];
+    date = date.replaceAll('-', '/');
+    time = time.replaceAll('-', ':');
+    title = date + ' ' + time;
+    return title;
+}
+
 function createVideoElement(video) {
     const videoElement = document.createElement("div");
     videoElement.classList.add("video-wrapper");
     videoElement.innerHTML = `
-        <h2 class="video-title">${video.replace('.mp4', '')}</h2>
+        <h2 class="video-title">${clearTitle(video)}</h2>
         <a href="./video-player.html?video=${video}">
             <video id="video-${video}" width="320" height="240">
                 <source src="/video/${video}" type="video/mp4">

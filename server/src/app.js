@@ -305,20 +305,29 @@ app.post('/api/delete', ensureAuthenticated, (req, res) => {
     const videoPath = path.join(videoDir, video);
     const thumbnailPath = path.join(thumbnailDir, `${video.replace('.mp4', '')}-thumbnail.png`);
 
-    fs.unlink(thumbnailPath, (err) => {
-        if (err) {
-            logger.error(`Error deleting thumbnail: ${err}`);
-            return res.status(500).json('Error deleting thumbnail: ' + err);
+    fs.access(thumbnailPath, fs.constants.F_OK, (err) => {
+        if (!err) {
+            fs.unlink(thumbnailPath, (err) => {
+                if (err) {
+                    logger.error(`Error deleting thumbnail: ${err}`);
+                    return res.status(500).json(`Error deleting thumbnail: ${err}`);
+                }
+                deleteVideo();
+            });
+        } else {
+            deleteVideo();
         }
     });
 
-    fs.unlink(videoPath, (err) => {
-        if (err) {
-            logger.error(`Error deleting video: ${err}`);
-            return res.status(500).json('Error deleting video: ' + err);
-        }
-        res.json({ message: 'Video deleted' });
-    });
+    function deleteVideo() {
+        fs.unlink(videoPath, (err) => {
+            if (err) {
+                logger.error(`Error deleting video: ${err}`);
+                return res.status(500).json(`Error deleting video: ${err}`);
+            }
+            res.json({ message: "Video deleted" });
+        });
+    }
 });
 
 app.get('/api/stats', ensureAuthenticated, async (req, res) => {

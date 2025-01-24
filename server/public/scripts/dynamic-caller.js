@@ -106,7 +106,7 @@ function fetchFlaggedVideos() {
 }
 
 function updatePaginationControls(currentPage, totalPages) {
-    document.getElementById("current-page").textContent = `Page ${currentPage} of ${totalPages}`;
+    document.getElementById("current-page").textContent = `${currentPage} / ${totalPages}`;
     document.getElementById("prev-page-btn").disabled = currentPage === 1;
     document.getElementById("next-page-btn").disabled = currentPage === totalPages;
 }

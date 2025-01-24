@@ -36,13 +36,13 @@ h1 {
 }
 
 
-.login_form {
+.login-form {
     text-align: center;
     justify-items: center;
 }
 
 
-.login_form label {
+.login-form label {
     font-size: 24px;
 }
 
@@ -108,7 +108,7 @@ input {
     }
 
 
-    .login_form {
+    .login-form {
         text-align: center;
         justify-content: center;
         justify-items: center;

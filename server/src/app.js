@@ -127,6 +127,10 @@ app.get('/styles/login.css', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/styles/login.css'));
 });
 
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/favicon.ico'));
+});
+
 app.get('/logout', (req, res) => {
     logger.info(`Logout requested from user ${req.user.username} at ${req.ip}`);
     req.logout();

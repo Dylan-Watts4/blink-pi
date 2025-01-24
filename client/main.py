@@ -24,6 +24,7 @@ def check_directory():
     for root, dirs, files in os.walk(video_directory):
         for file in files:
             if file.endswith(".mp4"):
+                print(f"Found {file}")
                 mp4_files.append(os.path.join(root, file))
     return mp4_files
 

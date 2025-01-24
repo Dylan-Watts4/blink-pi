@@ -121,6 +121,7 @@ video {
 #current-page {
     display: flex;
     align-items: center;
+    justify-content: center;
     margin: 0px 20px;
     font-weight: bold;
 }
@@ -181,5 +182,13 @@ video {
     .video-btns {
         font-size: 14px;
         margin: 5px 10px;
+    }
+
+    #current-page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0px 20px;
+        font-weight: bold;
     }
 }

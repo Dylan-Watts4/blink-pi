@@ -92,6 +92,10 @@ app.get("/robots.txt", (req, res) => {
     res.sendFile(path.join(__dirname, '../public/robots.txt'));
 });
 
+app.get("/favicon.ico", (req, res) => {
+    res.sendFile(path.to.join(__dirname, '../public/favicon.ico'));
+});
+
 app.post('/login', (req, res, next) => {
     logger.info(`Login attempt: ${req.body.username} from ${req.ip}`);
     passport.authenticate('local', (err, user, info) => {
@@ -299,6 +303,14 @@ app.post('/api/delete', ensureAuthenticated, (req, res) => {
     logger.info(`Delete video requested from user ${req.user.username} at ${req.ip}`);
     const { video } = req.body;
     const videoPath = path.join(videoDir, video);
+    const thumbnailPath = path.join(thumbnailDir, `${video.replace('.mp4', '')}-thumbnail.png`);
+
+    fs.unlink(thumbnailPath, (err) => {
+        if (err) {
+            logger.error(`Error deleting thumbnail: ${err}`);
+            return res.status(500).json('Error deleting thumbnail: ' + err);
+        }
+    });
 
     fs.unlink(videoPath, (err) => {
         if (err) {

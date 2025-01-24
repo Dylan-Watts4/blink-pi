@@ -63,6 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .catch(err => {
                 console.error("Error deleting video: ", err);
             });
+            window.href = "/";
         });
     } else {
         document.getElementById("video-player-container").innerHTML = "<h2>No video found</h2>";

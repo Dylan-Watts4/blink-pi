@@ -4,6 +4,9 @@ DIRECTORY = "/media/blink/videos"
 # MB
 DEDICATED_SPACE = 300 * 1024 # 300 GB
 
+VIDEO_DIR = ""
+THUMBNAIL_DIR = ""
+
 def get_files():
     return os.listdir(DIRECTORY)
 
@@ -31,7 +34,15 @@ def free_storage():
     files = get_sorted_files()
     for file in files:
         print(f"Removing {file}")
-        os.remove(os.path.join(DIRECTORY, file))
+        video_path = os.path.join(VIDEO_DIR, file)
+        thumbnail_path = os.path.join(THUMBNAIL_DIR, f"{os.path.splitext(file)[0]}-thumbnail.png")
+
+        os.remove(video_path)
+
+        if os.path.exists(thumbnail_path):
+            os.remove(thumbnail_path)
+            print(f"Removing thumbnail {thumbnail_path}")
+
         if get_used_storage_mb() < DEDICATED_SPACE:
             break
 

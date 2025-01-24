@@ -46,24 +46,6 @@ def clean():
     os.system("sudo modprobe g_mass_storage file=/usb-drive.img stall=0 ro=0 removable=1")
     os.system("sudo sync")
 
-def check_and_reload_g_mass_storage():
-    with open("/sys/module/g_mass_storage/parameters/ro", "r") as file:
-        ro = file.read().strip()
-    if ro == "Y":
-        print("Reloading g_mass_storage")
-        os.system("sudo modprobe -r g_mass_storage")
-        os.system("sudo modprobe g_mass_storage file=/usb-drive.img stall=0 ro=0 removable=1")
-        os.system("sudo sync")
-
-def ensure_usb_connection():
-    usb_status = os.popen("ls /sys/class/udc").read().strip()
-    if not usb_status:
-        print("Reconnecting USB")
-        os.system("sudo modprobe -r g_mass_storage")
-        time.sleep(1)
-        os.system("sudo modprobe g_mass_storage file=/usb-drive.img stall=0 ro=0 removable=1")
-        os.system("sudo sync")
-
 files = check_directory()
 if len(files) > 0:
     for file in files:
@@ -71,5 +53,3 @@ if len(files) > 0:
         upload_file(f"{file}")
     clean()
 unmount()
-check_and_reload_g_mass_storage()
-ensure_usb_connection()

@@ -31,8 +31,13 @@ const logger = winston.createLogger({
     format: winston.format.combine(
         winston.format.colorize(),
         winston.format.timestamp(),
-        winston.format.printf(({ timestamp, level, message }) =>{
-            return `${timestamp} ${level}: ${message}`;
+        winston.format.printf(({ timestamp, level, message, ...meta }) => {
+            return JSON.stringify({
+                timestamp,
+                level,
+                message,
+                ...meta
+            });
         })
     ),
     transports: [
@@ -42,11 +47,33 @@ const logger = winston.createLogger({
 });
 
 // Configure morgan to use winston logger
-app.use(morgan('combined', {
+morgan.token('real-ip', (req) => req.realIp);
+morgan.token('json', (req, res) => {
+    return JSON.stringify({
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        message: `${req.method} ${req.url} ${res.statusCode} - ${req.headers['user-agent']} ${res.get('Content-Length') || 0}b sent`,
+        ip: req.realIp
+    });
+});
+
+app.use(morgan(':json', {
     stream: {
-        write: (message) => logger.info(message.trim())
+        write: (message) => {
+            const log = JSON.parse(message);
+            logger.info(log.message, { ip: log.ip });
+        }
     }
 }));
+
+// Trust cloudflare proxy
+app.set('trust-proxy', true);
+
+// Middleware for real IP
+app.use((req, res, next) => {
+    req.realIp = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.ip;
+    next();
+});
 
 // TEST ------------------------------------
 const {transporter, email} = require('./email');
@@ -61,7 +88,7 @@ function sendEmailNotification(video) {
 
     transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
-            logger.info(`Error sending email: ${error}`);
+            logger.info(`Error sending email: ${error}`, { ip: req.realIp });
             return;
         }
         console.log('Email sent: ' + info.response);
@@ -93,29 +120,29 @@ app.get("/robots.txt", (req, res) => {
 });
 
 app.post('/login', (req, res, next) => {
-    logger.info(`Login attempt: ${req.body.username} from ${req.ip}`);
+    logger.info(`Login attempt: ${req.body.username}`, { ip: req.realIp });
     passport.authenticate('local', (err, user, info) => {
         if (err) {
-            logger.error(`Error authenticating user: ${err}`);
+            logger.error(`Error authenticating user: ${err}`, { ip: req.realIp });
             return res.status(500).json({ message: 'Internal server error' });
         }
         if (!user) {
-            logger.warn(`Failed login attempt: ${req.body.username} from ${req.ip}`);
+            logger.warn(`Failed login attempt: ${req.body.username}`, { ip: req.realIp });
             return res.status(401).json({ message: 'Invalid username or password' });
         }
         req.login(user, (err) => {
             if (err) {
-                logger.error(`Error logging in: ${err}`);
+                logger.error(`Error logging in: ${err}`, { ip: req.realIp });
                 return res.status(500).json({ message: 'Internal server error' });
             }
-            logger.info(`Login successful: ${req.body.username} from ${req.ip}`);
+            logger.info(`Login successful: ${req.body.username}`, { ip: req.realIp });
             return res.json({ success: true, message: 'Login successful' });
         });
     })(req, res, next);
 });
 
 app.get('/login', (req, res) => {
-    logger.info(`Login page requested from ${req.ip}`);
+    logger.info(`Login page requested`, { ip: req.realIp });
     res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
@@ -132,19 +159,19 @@ app.get('/favicon.ico', (req, res) => {
 });
 
 app.get('/logout', (req, res) => {
-    logger.info(`Logout requested from user ${req.user.username} at ${req.ip}`);
+    logger.info(`Logout requested from user ${req.user.username}`, { ip: req.realIp });
     req.logout();
     res.redirect('/login');
 });
 
 app.get('/', ensureAuthenticated, (req, res) => {
-    logger.info(`Home page requested from user ${req.user.username} at ${req.ip}`);
+    logger.info(`Home page requested from user ${req.user.username}`, { ip: req.realIp });
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 app.use(ensureAuthenticated, express.static(path.join(__dirname, '../public')));
 app.get('/api/videos', ensureAuthenticated, (req, res) => {
-    logger.info(`API videos requested from user ${req.user.username} at ${req.ip}`);
+    logger.info(`API videos requested from user ${req.user.username}`, { ip: req.realIp });
     const day = req.query.day ? new Date(req.query.day) : null;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || videosPerPage;
@@ -152,7 +179,7 @@ app.get('/api/videos', ensureAuthenticated, (req, res) => {
 
     fs.readdir(videoDir, (err, files) => {
         if (err) {
-            logger.error(`Error scanning directory: ${err}`);
+            logger.error(`Error scanning directory: ${err}`, { ip: req.realIp });
             return res.status(500).send('Unable to scan directory: ' + err);
         }
         let videos = files.filter(file => file.endsWith('.mp4'));
@@ -190,7 +217,7 @@ app.get('/api/videos', ensureAuthenticated, (req, res) => {
                 const videoPath = path.join(videoDir, video.file);
                 generateThumbnail(video.file, thumbnailDir, (err) => {
                     if (err) {
-                        logger.error(`Error generating thumbnail: ${err}`);
+                        logger.error(`Error generating thumbnail: ${err}`, { ip: req.realIp });
                         return reject(err);
                     }
                     resolve();
@@ -249,7 +276,7 @@ app.get('/video/:video', ensureAuthenticated, (req, res) => {
 app.get('/api/flagged', ensureAuthenticated, (req, res) => {
     fs.readdir(flaggedDir, (err, files) => {
         if (err) {
-            logger.error(`Error scanning directory: ${err}`);
+            logger.error(`Error scanning directory: ${err}`, { ip: req.realIp });
             return res.status(500).send('Unable to scan directory: ' + err);
         }
         const flaggedVideos = files.filter(file => file.endsWith('.mp4')).map(file => {
@@ -273,7 +300,7 @@ app.get('/api/flagged-video/:video', ensureAuthenticated, (req, res) => {
 });
 
 app.post('/api/flag', ensureAuthenticated, (req, res) => {
-    logger.info(`Flag video requested from user ${req.user.username} at ${req.ip}`);
+    logger.info(`Flag video requested from user ${req.user.username}`, { ip: req.realIp });
     const { video } = req.body;
     const sourcePath = path.join(videoDir, video);
     const destPath = path.join(flaggedDir, video);
@@ -282,7 +309,7 @@ app.post('/api/flag', ensureAuthenticated, (req, res) => {
         if (!err) {
             fs.unlink(destPath, (err) => {
                 if (err) {
-                    logger.error(`Error unflagging video: ${err}`);
+                    logger.error(`Error unflagging video: ${err}`, { ip: req.realIp });
                     return res.status(500).json('Error unflagging video: ' + err);
                 }
                 res.json({ message: 'Video unflagged' });
@@ -290,7 +317,7 @@ app.post('/api/flag', ensureAuthenticated, (req, res) => {
         } else {
             fs.copyFile(sourcePath, destPath, (err) => {
                 if (err) {
-                    logger.error(`Error flagging video: ${err}`);
+                    logger.error(`Error flagging video: ${err}`, { ip: req.realIp });
                     return res.status(500).json('Error flagging video: ' + err);
                 }
                 res.json({ message: 'Video flagged' });
@@ -300,7 +327,7 @@ app.post('/api/flag', ensureAuthenticated, (req, res) => {
 });
 
 app.post('/api/delete', ensureAuthenticated, (req, res) => {
-    logger.info(`Delete video requested from user ${req.user.username} at ${req.ip}`);
+    logger.info(`Delete video requested from user ${req.user.username}`, { ip: req.realIp });
     const { video } = req.body;
     const videoPath = path.join(videoDir, video);
     const thumbnailPath = path.join(thumbnailDir, `${video.replace('.mp4', '')}-thumbnail.png`);
@@ -309,7 +336,7 @@ app.post('/api/delete', ensureAuthenticated, (req, res) => {
         if (!err) {
             fs.unlink(thumbnailPath, (err) => {
                 if (err) {
-                    logger.error(`Error deleting thumbnail: ${err}`);
+                    logger.error(`Error deleting thumbnail: ${err}`, { ip: req.realIp });
                     return res.status(500).json(`Error deleting thumbnail: ${err}`);
                 }
                 deleteVideo();
@@ -322,7 +349,7 @@ app.post('/api/delete', ensureAuthenticated, (req, res) => {
     function deleteVideo() {
         fs.unlink(videoPath, (err) => {
             if (err) {
-                logger.error(`Error deleting video: ${err}`);
+                logger.error(`Error deleting video: ${err}`, { ip: req.realIp });
                 return res.status(500).json(`Error deleting video: ${err}`);
             }
             res.json({ message: "Video deleted" });
@@ -336,7 +363,7 @@ app.get('/api/stats', ensureAuthenticated, async (req, res) => {
         const isAlive = await ping.promise.probe(host);
         fs.readdir(videoDir, (err, files) => {
             if (err) {
-                logger.error(`Error scanning directory: ${err}`);
+                logger.error(`Error scanning directory: ${err}`, { ip: req.realIp });
                 return res.status(500).send('Unable to scan directory: ' + err);
             }
             const videos = files.filter(file => file.endsWith('.mp4'));
@@ -352,7 +379,7 @@ app.get('/api/stats', ensureAuthenticated, async (req, res) => {
             });
         });
     } catch (error) {
-        logger.error(`Error collecting stats: ${error}`);
+        logger.error(`Error collecting stats: ${error}`, { ip: req.realIp });
         res.status(500).send('Error collecting stats: ' + error);
     }
 });
@@ -363,7 +390,7 @@ app.get('/api/clips-per-hour', ensureAuthenticated, (req, res) => {
 
     fs.readdir(videoDir, (err, files) => {
         if (err) {
-            logger.error(`Error scanning directory: ${err}`);
+            logger.error(`Error scanning directory: ${err}`, { ip: req.realIp });
             return res.status(500).send('Unable to scan directory: ' + err);
         }
         const videos = files.filter(file => file.endsWith('.mp4'));
@@ -383,11 +410,11 @@ app.get('/api/clips-per-hour', ensureAuthenticated, (req, res) => {
 });
 
 app.post('/api/add-user', ensureAuthenticated, (req, res) => {
-    logger.warn(`New user added: ${req.body.username} from ${req.ip}`);
+    logger.warn(`New user added: ${req.body.username}`, { ip: req.realIp });
     const { username, password } = req.body;
     addUser(username, password, (error, result) => {
         if (error) {
-            logger.error(`Error adding user: ${error}`);
+            logger.error(`Error adding user: ${error}`, { ip: req.realIp });
             return res.status(500).json({ success: false, message: 'Internal server error' });
         }
         res.json(result);

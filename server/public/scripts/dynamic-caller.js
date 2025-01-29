@@ -115,6 +115,7 @@ function changePage(delta) {
     currentPage += delta;
     // TODO: defaults to all, need to add support for today and flagged
     fetchVideos(currentDay, currentPage, videosPerPage, currentCamera);
+    window.scrollTo(0, 0);
 }
 
 function resetFilters() {

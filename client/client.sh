@@ -9,7 +9,7 @@ do
     if [ $counter -eq 18 ]; then
         echo "Restarting the gadget..."
         sudo modprobe -r g_mass_storage
-        sleep 10s
+        sleep 1m
         sudo modprove g_mass_storage file=/usb-drive.img stall=0 ro=0 removable=1
         counter=0
     fi
